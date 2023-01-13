@@ -2,7 +2,7 @@ import random
 import tkinter as tk
 from tkinter import font  as tkfont
 import numpy as np
- 
+import sys
 
 ScorePlayer = 0
 
@@ -40,6 +40,32 @@ TBL = CreateArray([
         
 HAUTEUR = TBL.shape [1]      
 LARGEUR = TBL.shape [0]  
+
+# On définit une valeur I infiniment grande pour représenter les murs de la grille 
+I = sys.maxsize
+
+# On définit une valeur M pour représenter la surface du labyrinthe 
+M = HAUTEUR * LARGEUR
+
+# On définit une valeur G pour représenter les cases où il y a encore des gommes 
+O = 0 
+
+# On créé une nouvelle grille correspondant à la taille de la grille du jeu. 
+# La maison des fantômes est considéré comme des murs car inaccessible pour pacman 
+# Toutes les cases de aprcours sont à 0 car elles contiennent initialement une pacgomme. Une fois mangée, la casse passe à M 
+TBL_IA = CreateArray([
+   [I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I],
+   [I,0,0,0,0,I,0,0,0,0,0,0,0,0,I,0,0,0,0,I],
+   [I,0,I,I,0,I,0,I,I,I,I,I,I,0,I,0,I,I,0,I],
+   [I,0,I,0,0,0,0,0,0,0,0,0,0,0,0,0,0,I,0,I],
+   [I,0,I,0,I,I,0,I,I,I,I,I,I,0,I,I,0,I,0,I],
+   [I,0,0,0,0,0,0,I,I,I,I,I,I,0,0,0,0,0,0,I],
+   [I,0,I,0,I,I,0,I,I,I,I,I,I,0,I,I,0,I,0,I],
+   [I,0,I,0,0,0,0,0,0,0,0,0,0,0,0,0,0,I,0,I],
+   [I,0,I,I,0,I,0,I,I,I,I,I,I,0,I,0,I,I,0,I],
+   [I,0,0,0,0,I,0,0,0,0,0,0,0,0,1,0,0,0,0,I],
+   [I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I]
+]);
 
 
 # placements des pacgums et des fantomes
@@ -337,7 +363,11 @@ def IAGhosts():
       
 def PacManEatingGum():
    if( IsGum() == True ):
+      # Si la gomme est mangée, on passe la position dans le tableau GUM à 0 car la gomme n'est plus là
       GUM[PacManPos[0]][PacManPos[1]] = 0
+
+      # Si la gomme est mangée, on passe la position dans le tableau TBL_IA à M, la superficie, de la grille
+      TBL_IA[PacManPos[0]][PacManPos[1]] = M
 
       global ScorePlayer 
       ScorePlayer += 100
