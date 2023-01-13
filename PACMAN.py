@@ -52,8 +52,9 @@ M = HAUTEUR * LARGEUR
 O = 0 
 
 # On créé une nouvelle grille correspondant à la taille de la grille du jeu. 
-# La maison des fantômes est considéré comme des murs car inaccessible pour pacman 
-# Toutes les cases de aprcours sont à 0 car elles contiennent initialement une pacgomme. Une fois mangée, la casse passe à M 
+# La maison des fantômes est considérée comme des murs car inaccessible pour Pacman 
+
+# Toutes les cases de parcours sont à 0 car elles contiennent initialement une pacgomme. Une fois mangée, la casse passe à M 
 TBL_IA = CreateArray([
    [I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I],
    [I,0,0,0,0,I,0,0,0,0,0,0,0,0,I,0,0,0,0,I],
@@ -188,6 +189,11 @@ def AfficherPage(id):
 def WindowAnim():
     PlayOneTurn()
     Window.after(333,WindowAnim)
+    
+def AffichageScore():
+   global ScorePlayer
+   canvas.create_text(30, screenHeight- 20 , text = ScorePlayer, fill ="yellow", font = PoliceTexte)
+   print("Score : " + str(ScorePlayer))
 
 Window.after(100,WindowAnim)
 
@@ -307,6 +313,8 @@ def Affiche(PacmanColor,message):
    canvas.create_text(screeenWidth // 2, screenHeight- 50 , text = "PAUSE : PRESS SPACE", fill ="yellow", font = PoliceTexte)
    canvas.create_text(screeenWidth // 2, screenHeight- 20 , text = message, fill ="yellow", font = PoliceTexte)
    
+   # Affiche le score du Player à l'écran
+   AffichageScore()
  
 AfficherPage(0)
             
@@ -372,8 +380,6 @@ def PacManEatingGum():
 
       global ScorePlayer 
       ScorePlayer += 100
-
-      print("Score : " + str(ScorePlayer))
  
 
  
