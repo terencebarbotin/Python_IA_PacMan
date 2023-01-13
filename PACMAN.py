@@ -73,7 +73,7 @@ Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "orange"] )
 Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "cyan"  ]   )
 Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "red"   ]     )         
 
-
+     
 
 ##############################################################################
 #
