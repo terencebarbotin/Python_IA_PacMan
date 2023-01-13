@@ -344,6 +344,7 @@ def PacManEatingGum():
 
       print("Score : " + str(ScorePlayer))
  
+ 
 
  
 #  Boucle principale de votre jeu appelée toutes les 500ms
