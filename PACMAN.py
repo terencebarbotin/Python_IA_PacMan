@@ -6,6 +6,7 @@ import sys
 
 ScorePlayer = 0
 
+
 ##########################################################################
 #
 #   Partie I : variables du jeu  -  placez votre code dans cette section
@@ -21,7 +22,7 @@ ScorePlayer = 0
 
 # transforme une liste de liste Python en TBL numpy équivalent à un tableau 2D en C
 def CreateArray(L):
-   T = np.array(L,dtype=np.int32)
+   T = np.array(L,dtype=np.int64)
    T = T.transpose()  ## ainsi, on peut écrire TBL[x][y]
    return T
 
@@ -192,8 +193,8 @@ def WindowAnim():
     
 def AffichageScore():
    global ScorePlayer
-   canvas.create_text(30, screenHeight- 20 , text = ScorePlayer, fill ="yellow", font = PoliceTexte)
-   print("Score : " + str(ScorePlayer))
+   canvas.create_text(100, screenHeight- 20 , text = "Score : " + str(ScorePlayer), fill ="yellow", font = PoliceTexte)
+   print(str(ScorePlayer))
 
 Window.after(100,WindowAnim)
 
@@ -344,7 +345,7 @@ def GhostsPossibleMove(x,y):
    
 def IAPacman():
    global PacManPos, Ghosts
-   #deplacement Pacman
+   # Déplacement Pacman
    L = PacManPossibleMove()
    choix = random.randrange(len(L))
    PacManPos[0] += L[choix][0]
