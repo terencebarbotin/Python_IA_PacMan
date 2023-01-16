@@ -352,6 +352,15 @@ def IAPacman():
 
    PacManEatingGum()
    
+   # # Examen des valeurs des cases adjacentes 
+   # # On parcourt chaque case du tableau
+   # for i in range(len(TBL_IA)):
+   #    for j in range(len(TBL_IA)):
+   #       case = TBL[i][j]
+   #       case_gauche = TBL[i - 1][j]
+   #       case_droite = TBL[i + 1][j]
+   
+   
    # juste pour montrer comment on se sert de la fonction SetInfo1
    for x in range(LARGEUR):
       for y in range(HAUTEUR):
@@ -377,6 +386,7 @@ def PacManEatingGum():
 
       # Si la gomme est mangée, on passe la position dans le tableau TBL_IA à M, la superficie, de la grille
       TBL_IA[PacManPos[0]][PacManPos[1]] = M
+      print(M)
 
       global ScorePlayer 
       ScorePlayer += 100
