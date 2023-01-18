@@ -21,7 +21,7 @@ ScorePlayer = 0
 
 # transforme une liste de liste Python en TBL numpy équivalent à un tableau 2D en C
 def CreateArray(L):
-   T = np.array(L,dtype=np.int32)
+   T = np.array(L,dtype=np.int64)
    T = T.transpose()  ## ainsi, on peut écrire TBL[x][y]
    return T
 
@@ -42,10 +42,7 @@ TBL = CreateArray([
 HAUTEUR = TBL.shape [1]      
 LARGEUR = TBL.shape [0]  
 
-# On définit une valeur I infiniment grande pour représenter les murs de la grille 
-I = sys.maxsize
-
-# On définit une valeur M pour représenter la surface du labyrinthe 
+I = 1000
 M = HAUTEUR * LARGEUR
 
 # On définit une valeur G pour représenter les cases où il y a encore des gommes 
@@ -54,20 +51,6 @@ O = 0
 # On créé une nouvelle grille correspondant à la taille de la grille du jeu. 
 # La maison des fantômes est considérée comme des murs car inaccessible pour Pacman 
 
-# Toutes les cases de parcours sont à 0 car elles contiennent initialement une pacgomme. Une fois mangée, la casse passe à M 
-TBL_IA = CreateArray([
-   [I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I],
-   [I,0,0,0,0,I,0,0,0,0,0,0,0,0,I,0,0,0,0,I],
-   [I,0,I,I,0,I,0,I,I,I,I,I,I,0,I,0,I,I,0,I],
-   [I,0,I,0,0,0,0,0,0,0,0,0,0,0,0,0,0,I,0,I],
-   [I,0,I,0,I,I,0,I,I,I,I,I,I,0,I,I,0,I,0,I],
-   [I,0,0,0,0,0,0,I,I,I,I,I,I,0,0,0,0,0,0,I],
-   [I,0,I,0,I,I,0,I,I,I,I,I,I,0,I,I,0,I,0,I],
-   [I,0,I,0,0,0,0,0,0,0,0,0,0,0,0,0,0,I,0,I],
-   [I,0,I,I,0,I,0,I,I,I,I,I,I,0,I,0,I,I,0,I],
-   [I,0,0,0,0,I,0,0,0,0,0,0,0,0,1,0,0,0,0,I],
-   [I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I]
-]);
 
 
 # placements des pacgums et des fantomes
@@ -188,7 +171,7 @@ def AfficherPage(id):
     
 def WindowAnim():
     PlayOneTurn()
-    Window.after(333,WindowAnim)
+    Window.after(100,WindowAnim)
     
 def AffichageScore():
    global ScorePlayer
@@ -325,13 +308,24 @@ AfficherPage(0)
 #########################################################################
 
       
-def PacManPossibleMove():
-   L = []
+def PacManPossibleMove(TBL_IA):
+   L = ()
    x,y = PacManPos
-   if ( TBL[x  ][y-1] == 0 ): L.append((0,-1))
-   if ( TBL[x  ][y+1] == 0 ): L.append((0, 1))
-   if ( TBL[x+1][y  ] == 0 ): L.append(( 1,0))
-   if ( TBL[x-1][y  ] == 0 ): L.append((-1,0))
+   # on cherche la case adjacente avec la plus courte distante vers la pacgum
+   # et on la choisit comme solution
+   min = 1000
+   if (min > TBL_IA[x  ][y-1]):
+      min = TBL_IA[x][y-1]
+      L = (0,-1)
+   if (min > TBL_IA[x  ][y+1]):
+      min = TBL_IA[x][y+1]
+      L = (0, 1)
+   if (min > TBL_IA[x+1][y  ] ):
+      min = TBL_IA[x+1][y]
+      L = (1,0)
+   if (min > TBL_IA[x-1][y ]):
+      min = TBL_IA[x-1][y]
+      L = (-1,0)
    return L
    
 def GhostsPossibleMove(x,y):
@@ -344,32 +338,64 @@ def GhostsPossibleMove(x,y):
    
 def IAPacman():
    global PacManPos, Ghosts
-   #deplacement Pacman
-   L = PacManPossibleMove()
-   choix = random.randrange(len(L))
-   PacManPos[0] += L[choix][0]
-   PacManPos[1] += L[choix][1]
+   
+   # On initialise un tableau où toutes les cases du parcours sont initialisés à M.
+   TBL_IA = CreateArray([
+      [I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I],
+      [I,M,M,M,M,I,M,M,M,M,M,M,M,M,I,M,M,M,M,I],
+      [I,M,I,I,M,I,M,I,I,I,I,I,I,M,I,M,I,I,M,I],
+      [I,M,I,M,M,M,M,M,M,M,M,M,M,M,M,M,M,I,M,I],
+      [I,M,I,M,I,I,M,I,I,I,I,I,I,M,I,I,M,I,M,I],
+      [I,M,M,M,M,M,M,I,I,I,I,I,I,M,M,M,M,M,M,I],
+      [I,M,I,M,I,I,M,I,I,I,I,I,I,M,I,I,M,I,M,I],
+      [I,M,I,M,M,M,M,M,M,M,M,M,M,M,M,M,M,I,M,I],
+      [I,M,I,I,M,I,M,I,I,I,I,I,I,M,I,M,I,I,M,I],
+      [I,M,M,M,M,I,M,M,M,M,M,M,M,M,1,M,M,M,M,I],
+      [I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I]
+   ]);
+   # On remplace toutes les cases du parcours par des "0" si la case correspondante contient une pacgum
+   TBL_IA = np.where(GUM == 1, 0, TBL_IA)
+   
+   # #deplacement Pacman
+   L = PacManPossibleMove(TBL_IA)
+   PacManPos[0] += L[0]
+   PacManPos[1] += L[1]
 
    PacManEatingGum()
    
-   # # Examen des valeurs des cases adjacentes 
-   # # On parcourt chaque case du tableau
-   # for i in range(len(TBL_IA)):
-   #    for j in range(len(TBL_IA)):
-   #       case = TBL[i][j]
-   #       case_gauche = TBL[i - 1][j]
-   #       case_droite = TBL[i + 1][j]
-   
-   
+   # On initialise à True au début pour commencer la boucle
+   updated = True
+   while(updated):
+      # On remet à false, comme ça il repasse à true uniquement si mise à jour il y a
+      updated = False
+      # On parcourt chaque case du tableau, dénué de ses murs
+      for j in range(1,HAUTEUR-1):
+         for i in range(1,LARGEUR-1):
+            
+            
+            # On stocke les valeurs de la case et de ses cases adjacentes
+            case = TBL_IA[i][j]
+            case_haut = TBL_IA[i][j + 1]
+            case_bas = TBL_IA[i][j - 1]
+            case_gauche = TBL_IA[i - 1][j]
+            case_droite = TBL_IA[i + 1][j]
+            
+            # On mémorise le minimum des trois et on lui ajoute un
+            # on obtient la longueur du meilleur chemin possible en empruntant une de ces 4 cases
+            min_case = min(case_haut, case_bas,  case_gauche, case_droite) + 1
+            # # Si la valeur calculée est meilleure que la valeur de la case courante
+            # # on la met à jour
+            if(min_case < TBL_IA[i][j] and case < 1000): 
+               TBL_IA[i][j] = min_case
+               # Si mise à jour il y a, on passe updated à True
+               updated = True
    # juste pour montrer comment on se sert de la fonction SetInfo1
    for x in range(LARGEUR):
       for y in range(HAUTEUR):
-         info = x
-         if   x % 3 == 1 : info = "+∞"
-         elif x % 3 == 2 : info = ""
+         info = TBL_IA[x][y]
+         if info >= 1000 : info = "+∞"
          SetInfo1(x,y,info)
-   
- 
+
    
 def IAGhosts():
    #deplacement Fantome
@@ -383,9 +409,6 @@ def PacManEatingGum():
    if( IsGum() == True ):
       # Si la gomme est mangée, on passe la position dans le tableau GUM à 0 car la gomme n'est plus là
       GUM[PacManPos[0]][PacManPos[1]] = 0
-
-      # Si la gomme est mangée, on passe la position dans le tableau TBL_IA à M, la superficie, de la grille
-      TBL_IA[PacManPos[0]][PacManPos[1]] = M
       print(M)
 
       global ScorePlayer 
