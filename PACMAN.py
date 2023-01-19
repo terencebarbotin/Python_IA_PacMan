@@ -4,8 +4,6 @@ from tkinter import font  as tkfont
 import numpy as np
 import sys
 
-ScorePlayer = 0
-
 ##########################################################################
 #
 #   Partie I : variables du jeu  -  placez votre code dans cette section
@@ -18,6 +16,9 @@ ScorePlayer = 0
 # 0 vide
 # 1 mur
 # 2 maison des fantomes (ils peuvent circuler mais pas pacman)
+
+ScorePlayer = 0
+GameLost = False
 
 # transforme une liste de liste Python en TBL numpy équivalent à un tableau 2D en C
 def CreateArray(L):
@@ -360,7 +361,7 @@ def IAPacman():
       [I,M,I,M,I,I,M,I,I,I,I,I,I,M,I,I,M,I,M,I],
       [I,M,I,M,M,M,M,M,M,M,M,M,M,M,M,M,M,I,M,I],
       [I,M,I,I,M,I,M,I,I,I,I,I,I,M,I,M,I,I,M,I],
-      [I,M,M,M,M,I,M,M,M,M,M,M,M,M,1,M,M,M,M,I],
+      [I,M,M,M,M,I,M,M,M,M,M,M,M,M,I,M,M,M,M,I],
       [I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I]
    ]);
    # On remplace toutes les cases du parcours par des "0" si la case correspondante contient une pacgum
@@ -405,9 +406,14 @@ def IAPacman():
          info = TBL_IA[x][y]
          if info >= 1000 : info = "+∞"
          SetInfo1(x,y,info)
+   global GameLost
+   for F in Ghosts:
+      if (F[0] == PacManPos[0] and F[1] == PacManPos[1]):
+         GameLost = True
 
    
 def IAGhosts():
+   global PacManPos
    #deplacement Fantome
    for F in Ghosts:
       
@@ -418,7 +424,9 @@ def IAGhosts():
       F[3] = (L[choix][0],L[choix][1])
       F[0] += L[choix][0]
       F[1] += L[choix][1]
-      print(F)
+      global GameLost
+      if (F[0] == PacManPos[0] and F[1] == PacManPos[1]):
+         GameLost = True
       
       
 def PacManEatingGum():
@@ -437,7 +445,7 @@ iteration = 0
 def PlayOneTurn():
    global iteration
    
-   if not PAUSE_FLAG : 
+   if (not PAUSE_FLAG) and GameLost == False: 
       iteration += 1
       if iteration % 2 == 0 :   IAPacman()
       else:                     IAGhosts()
