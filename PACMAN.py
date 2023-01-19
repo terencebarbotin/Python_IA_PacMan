@@ -79,10 +79,10 @@ def IsGum():
 
    
 Ghosts  = []
-Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "pink"  ]   )
-Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "orange"] )
-Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "cyan"  ]   )
-Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "red"   ]     )         
+Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "pink", '']   )
+Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "orange", ''] )
+Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "cyan", '']   )
+Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "red", ''   ]     )         
 
      
 
@@ -171,12 +171,11 @@ def AfficherPage(id):
     
 def WindowAnim():
     PlayOneTurn()
-    Window.after(100,WindowAnim)
+    Window.after(333,WindowAnim)
     
 def AffichageScore():
    global ScorePlayer
    canvas.create_text(30, screenHeight- 20 , text = ScorePlayer, fill ="yellow", font = PoliceTexte)
-   print("Score : " + str(ScorePlayer))
 
 Window.after(100,WindowAnim)
 
@@ -328,12 +327,23 @@ def PacManPossibleMove(TBL_IA):
       L = (-1,0)
    return L
    
-def GhostsPossibleMove(x,y):
+def GhostsPossibleMove(x,y,move):
    L = []
-   if ( TBL[x  ][y-1] == 2 ): L.append((0,-1))
-   if ( TBL[x  ][y+1] == 2 ): L.append((0, 1))
-   if ( TBL[x+1][y  ] == 2 ): L.append(( 1,0))
-   if ( TBL[x-1][y  ] == 2 ): L.append((-1,0))
+   # On vérifie si le ghost se trouve dans un couloir
+   # couloir horizontal
+   if (TBL[x][y+1] == 1 and TBL[x][y-1] == 1 and TBL[x+1][y] in [2,0] and TBL[x-1][y] in [2,0]):
+      L.append(move)
+   # couloir vertical
+   elif (TBL[x-1][y] == 1 and TBL[x+1][y] == 1 and TBL[x][y-1] in [2,0] and TBL[x][y+1] in [2,0]):
+      L.append(move)
+   # tournant ou croisement
+   else:
+      # on vérifie si la case possible n'est pas un mur
+      if ( TBL[x  ][y-1] in [2,0] ): L.append((0,-1))
+      if ( TBL[x  ][y+1] in [2,0] ): L.append((0, 1))
+      if ( TBL[x+1][y  ] in [2,0] ): L.append(( 1,0))
+      if ( TBL[x-1][y  ] in [2,0] ): L.append((-1,0))
+
    return L
    
 def IAPacman():
@@ -400,16 +410,21 @@ def IAPacman():
 def IAGhosts():
    #deplacement Fantome
    for F in Ghosts:
-      L = GhostsPossibleMove(F[0],F[1])
+      
+      
+      L = GhostsPossibleMove(F[0],F[1],F[3])
       choix = random.randrange(len(L))
+      # on associe le fantôme à sa direction courante
+      F[3] = (L[choix][0],L[choix][1])
       F[0] += L[choix][0]
       F[1] += L[choix][1]
+      print(F)
+      
       
 def PacManEatingGum():
    if( IsGum() == True ):
       # Si la gomme est mangée, on passe la position dans le tableau GUM à 0 car la gomme n'est plus là
       GUM[PacManPos[0]][PacManPos[1]] = 0
-      print(M)
 
       global ScorePlayer 
       ScorePlayer += 100
