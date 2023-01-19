@@ -18,8 +18,11 @@ import sys
 # 2 maison des fantomes (ils peuvent circuler mais pas pacman)
 
 ScorePlayer = 0
-GameLost = False
-
+# 0 En cours
+# 1 Perdu
+# 2 Gagné
+GameState = 0
+GameStateMsg = "En cours"
 # transforme une liste de liste Python en TBL numpy équivalent à un tableau 2D en C
 def CreateArray(L):
    T = np.array(L,dtype=np.int64)
@@ -57,7 +60,7 @@ O = 0
 # placements des pacgums et des fantomes
 
 def PlacementsGUM():  # placements des pacgums
-   GUM = np.zeros(TBL.shape,dtype=np.int32)
+   GUM = np.zeros(TBL.shape,dtype=np.int64)
    
    for x in range(LARGEUR):
       for y in range(HAUTEUR):
@@ -172,7 +175,7 @@ def AfficherPage(id):
     
 def WindowAnim():
     PlayOneTurn()
-    Window.after(333,WindowAnim)
+    Window.after(100,WindowAnim)
     
 def AffichageScore():
    global ScorePlayer
@@ -308,24 +311,44 @@ AfficherPage(0)
 #########################################################################
 
       
-def PacManPossibleMove(TBL_IA):
+def PacManPossibleMove(TBL_IA, TBL_Ghost_IA):
    L = ()
    x,y = PacManPos
    # on cherche la case adjacente avec la plus courte distante vers la pacgum
    # et on la choisit comme solution
-   min = 1000
-   if (min > TBL_IA[x  ][y-1]):
+   
+   max = -1000
+   # Mode chasse aux pacgums
+   if(TBL_Ghost_IA[x][y] > 3):
       min = TBL_IA[x][y-1]
       L = (0,-1)
-   if (min > TBL_IA[x  ][y+1]):
-      min = TBL_IA[x][y+1]
-      L = (0, 1)
-   if (min > TBL_IA[x+1][y  ] ):
-      min = TBL_IA[x+1][y]
-      L = (1,0)
-   if (min > TBL_IA[x-1][y ]):
-      min = TBL_IA[x-1][y]
-      L = (-1,0)
+      # if (min > TBL_IA[x  ][y-1]):
+      #    min = TBL_IA[x][y-1]
+      #    L = (0,-1)
+      if (min > TBL_IA[x  ][y+1]):
+         min = TBL_IA[x][y+1]
+         L = (0, 1)
+      if (min > TBL_IA[x+1][y  ] ):
+         min = TBL_IA[x+1][y]
+         L = (1,0)
+      if (min > TBL_IA[x-1][y ]):
+         min = TBL_IA[x-1][y]
+         L = (-1,0)
+   # Mode fuite (mode tapette en fait)
+   if(TBL_Ghost_IA[x][y] <= 3):
+      if max < TBL_Ghost_IA[x-1][y] and TBL_Ghost_IA[x-1][y] < 900 :
+         max = TBL_Ghost_IA[x-1][y]
+         L = (-1,0)
+      if max < TBL_Ghost_IA[x+1][y] and TBL_Ghost_IA[x+1][y] < 999 :
+         max = TBL_Ghost_IA[x+1][y]
+         L = (1,0)
+      if max < TBL_Ghost_IA[x][y-1] and TBL_Ghost_IA[x][y-1] < 999 :
+         max = TBL_Ghost_IA[x][y-1]
+         L = (0,-1)
+      if max < TBL_Ghost_IA[x][y+1] and TBL_Ghost_IA[x][y+1] < 999 :
+         max = TBL_Ghost_IA[x][y+1]
+         L = (0,1)
+
    return L
    
 def GhostsPossibleMove(x,y,move):
@@ -367,13 +390,29 @@ def IAPacman():
    # On remplace toutes les cases du parcours par des "0" si la case correspondante contient une pacgum
    TBL_IA = np.where(GUM == 1, 0, TBL_IA)
    
-   # #deplacement Pacman
-   L = PacManPossibleMove(TBL_IA)
-   PacManPos[0] += L[0]
-   PacManPos[1] += L[1]
-
-   PacManEatingGum()
+   # On initialise un tableau où toutes les cases du parcours sont initialisés à M.
+   TBL_Ghost_IA = CreateArray([
+      [I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I],
+      [I,M,M,M,M,I,M,M,M,M,M,M,M,M,I,M,M,M,M,I],
+      [I,M,I,I,M,I,M,I,I,I,I,I,I,M,I,M,I,I,M,I],
+      [I,M,I,M,M,M,M,M,M,M,M,M,M,M,M,M,M,I,M,I],
+      [I,M,I,M,I,I,M,I,I,I,I,I,I,M,I,I,M,I,M,I],
+      [I,M,M,M,M,M,M,I,I,I,I,I,I,M,M,M,M,M,M,I],
+      [I,M,I,M,I,I,M,I,I,I,I,I,I,M,I,I,M,I,M,I],
+      [I,M,I,M,M,M,M,M,M,M,M,M,M,M,M,M,M,I,M,I],
+      [I,M,I,I,M,I,M,I,I,I,I,I,I,M,I,M,I,I,M,I],
+      [I,M,M,M,M,I,M,M,M,M,M,M,M,M,I,M,M,M,M,I],
+      [I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I]
+   ]);
+   # On créé un tableau similaire à GUM où chaque case égale à 1 contient un fantôme
+   GHOST = np.zeros(TBL.shape,dtype=np.int64)
+   # On met à jour le tableau à chaque tour
+   for F in Ghosts:
+      GHOST[F[0]][F[1]] = 1
+   # On remplace toutes les cases du parcours par des "0" si la case correspondante contient une pacgum
+   TBL_Ghost_IA = np.where(GHOST == 1, 0, TBL_Ghost_IA)
    
+   # Carte des distance fantômes 
    # On initialise à True au début pour commencer la boucle
    updated = True
    while(updated):
@@ -382,15 +421,45 @@ def IAPacman():
       # On parcourt chaque case du tableau, dénué de ses murs
       for j in range(1,HAUTEUR-1):
          for i in range(1,LARGEUR-1):
-            
-            
+            # On stocke les valeurs de la case et de ses cases adjacentes
+            case = TBL_Ghost_IA[i][j]
+            case_haut = TBL_Ghost_IA[i][j + 1]
+            case_bas = TBL_Ghost_IA[i][j - 1]
+            case_gauche = TBL_Ghost_IA[i - 1][j]
+            case_droite = TBL_Ghost_IA[i + 1][j]
+            # On mémorise le minimum des trois et on lui ajoute un
+            # on obtient la longueur du meilleur chemin possible en empruntant une de ces 4 cases
+            min_case = min(case_haut, case_bas,  case_gauche, case_droite) + 1
+            # # Si la valeur calculée est meilleure que la valeur de la case courante
+            # # on la met à jour
+            if(min_case < TBL_Ghost_IA[i][j] and case < 1000): 
+               TBL_Ghost_IA[i][j] = min_case
+               # Si mise à jour il y a, on passe updated à True
+               updated = True
+   # Affiche la carte des distances des fantômes
+   for x in range(LARGEUR):
+      for y in range(HAUTEUR):
+         info = TBL_Ghost_IA[x][y]
+         if info >= 1000 : info = ""
+         SetInfo2(x,y,info)
+
+   PacManEatingGum()
+   
+   # Carte des distances PacGum
+   # On initialise à True au début pour commencer la boucle
+   updated = True
+   while(updated):
+      # On remet à false, comme ça il repasse à true uniquement si mise à jour il y a
+      updated = False
+      # On parcourt chaque case du tableau, dénué de ses murs
+      for j in range(1,HAUTEUR-1):
+         for i in range(1,LARGEUR-1):
             # On stocke les valeurs de la case et de ses cases adjacentes
             case = TBL_IA[i][j]
             case_haut = TBL_IA[i][j + 1]
             case_bas = TBL_IA[i][j - 1]
             case_gauche = TBL_IA[i - 1][j]
             case_droite = TBL_IA[i + 1][j]
-            
             # On mémorise le minimum des trois et on lui ajoute un
             # on obtient la longueur du meilleur chemin possible en empruntant une de ces 4 cases
             min_case = min(case_haut, case_bas,  case_gauche, case_droite) + 1
@@ -400,16 +469,27 @@ def IAPacman():
                TBL_IA[i][j] = min_case
                # Si mise à jour il y a, on passe updated à True
                updated = True
-   # juste pour montrer comment on se sert de la fonction SetInfo1
+               
+   # Affiche la carte de distances des PacGums
    for x in range(LARGEUR):
       for y in range(HAUTEUR):
          info = TBL_IA[x][y]
          if info >= 1000 : info = "+∞"
          SetInfo1(x,y,info)
-   global GameLost
+         
+   #deplacement Pacman
+   L = PacManPossibleMove(TBL_IA, TBL_Ghost_IA)
+   PacManPos[0] += L[0]
+   PacManPos[1] += L[1]
+         
+   global GameState, GameStateMsg
    for F in Ghosts:
       if (F[0] == PacManPos[0] and F[1] == PacManPos[1]):
-         GameLost = True
+         GameState = 1
+         GameStateMsg = "Perdu"
+   if np.all(GUM == 0):
+      GameState = 2
+      GameStateMsg = "Gagné"
 
    
 def IAGhosts():
@@ -424,9 +504,10 @@ def IAGhosts():
       F[3] = (L[choix][0],L[choix][1])
       F[0] += L[choix][0]
       F[1] += L[choix][1]
-      global GameLost
+      global GameState, GameStateMsg
       if (F[0] == PacManPos[0] and F[1] == PacManPos[1]):
-         GameLost = True
+         GameState = 1
+         GameStateMsg = "Perdu"
       
       
 def PacManEatingGum():
@@ -445,12 +526,12 @@ iteration = 0
 def PlayOneTurn():
    global iteration
    
-   if (not PAUSE_FLAG) and GameLost == False: 
+   if (not PAUSE_FLAG) and GameState == 0: 
       iteration += 1
       if iteration % 2 == 0 :   IAPacman()
       else:                     IAGhosts()
-   
-   Affiche(PacmanColor = "yellow", message = "message")  
+   global GameStateMsg
+   Affiche(PacmanColor = "yellow", message = GameStateMsg)  
  
  
 ###########################################:
