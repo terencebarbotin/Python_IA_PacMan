@@ -16,13 +16,20 @@ import sys
 # 0 vide
 # 1 mur
 # 2 maison des fantomes (ils peuvent circuler mais pas pacman)
+# 3 Super-PacGum
 
 ScorePlayer = 0
+
 # 0 En cours
 # 1 Perdu
 # 2 Gagné
 GameState = 0
+
 GameStateMsg = "En cours"
+
+Super = False
+SuperCount = 16
+
 # transforme une liste de liste Python en TBL numpy équivalent à un tableau 2D en C
 def CreateArray(L):
    T = np.array(L,dtype=np.int64)
@@ -31,7 +38,7 @@ def CreateArray(L):
 
 TBL = CreateArray([
         [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-        [1,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,0,1],
+        [1,3,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,3,1],
         [1,0,1,1,0,1,0,1,1,1,1,1,1,0,1,0,1,1,0,1],
         [1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
         [1,0,1,0,1,1,0,1,1,2,2,1,1,0,1,1,0,1,0,1],
@@ -39,7 +46,7 @@ TBL = CreateArray([
         [1,0,1,0,1,1,0,1,1,1,1,1,1,0,1,1,0,1,0,1],
         [1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
         [1,0,1,1,0,1,0,1,1,1,1,1,1,0,1,0,1,1,0,1],
-        [1,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,0,1],
+        [1,3,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,3,1],
         [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] ]);
 # attention, on utilise TBL[x][y] 
         
@@ -66,6 +73,9 @@ def PlacementsGUM():  # placements des pacgums
       for y in range(HAUTEUR):
          if ( TBL[x][y] == 0):
             GUM[x][y] = 1
+         # Super PacGums
+         if(TBL[x][y] == 3):
+            GUM[x][y] = 2
    return GUM
             
 GUM = PlacementsGUM()   
@@ -80,6 +90,8 @@ def IsGum():
 
    return IsGum
 
+def IsSuperGum():
+   return GUM[PacManPos[0]][PacManPos[1]] == 2
 
    
 Ghosts  = []
@@ -175,7 +187,7 @@ def AfficherPage(id):
     
 def WindowAnim():
     PlayOneTurn()
-    Window.after(100,WindowAnim)
+    Window.after(333,WindowAnim)
     
 def AffichageScore():
    global ScorePlayer
@@ -242,6 +254,11 @@ def Affiche(PacmanColor,message):
             xx = To(x) 
             yy = To(y)
             e = 5
+            canvas.create_oval(xx-e,yy-e,xx+e,yy+e,fill="orange")
+         if ( GUM[x][y] == 2):
+            xx = To(x) 
+            yy = To(y)
+            e = 10
             canvas.create_oval(xx-e,yy-e,xx+e,yy+e,fill="orange")
             
    #extra info
@@ -388,7 +405,7 @@ def IAPacman():
       [I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I]
    ]);
    # On remplace toutes les cases du parcours par des "0" si la case correspondante contient une pacgum
-   TBL_IA = np.where(GUM == 1, 0, TBL_IA)
+   TBL_IA = np.where(((GUM == 1) | (GUM == 2)), 0, TBL_IA)
    
    # On initialise un tableau où toutes les cases du parcours sont initialisés à M.
    TBL_Ghost_IA = CreateArray([
@@ -481,6 +498,18 @@ def IAPacman():
    L = PacManPossibleMove(TBL_IA, TBL_Ghost_IA)
    PacManPos[0] += L[0]
    PacManPos[1] += L[1]
+   
+   # Super Mode
+   global Super, SuperCount
+   # Décompte tours Super
+   if(Super):
+      SuperCount -= 1
+      print(SuperCount)
+      
+   # Reset compteur Super
+   if(SuperCount == 0):
+      Super = False
+      SuperCount = 16
          
    global GameState, GameStateMsg
    for F in Ghosts:
@@ -511,11 +540,15 @@ def IAGhosts():
       
       
 def PacManEatingGum():
+   global ScorePlayer, Super
    if( IsGum() == True ):
       # Si la gomme est mangée, on passe la position dans le tableau GUM à 0 car la gomme n'est plus là
       GUM[PacManPos[0]][PacManPos[1]] = 0
-
-      global ScorePlayer 
+      ScorePlayer += 100
+      
+   if(IsSuperGum()):
+      GUM[PacManPos[0]][PacManPos[1]] = 0
+      Super = True
       ScorePlayer += 100
  
 
@@ -524,14 +557,17 @@ def PacManEatingGum():
 
 iteration = 0
 def PlayOneTurn():
-   global iteration
+   global iteration, Super,GameStateMsg
    
    if (not PAUSE_FLAG) and GameState == 0: 
       iteration += 1
       if iteration % 2 == 0 :   IAPacman()
       else:                     IAGhosts()
-   global GameStateMsg
-   Affiche(PacmanColor = "yellow", message = GameStateMsg)  
+      
+      if (Super):
+         Affiche(PacmanColor = "blue", message = GameStateMsg)  
+      else:
+         Affiche(PacmanColor = "yellow", message = GameStateMsg)  
  
  
 ###########################################:
