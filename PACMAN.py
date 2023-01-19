@@ -331,39 +331,55 @@ AfficherPage(0)
 def PacManPossibleMove(TBL_IA, TBL_Ghost_IA):
    L = ()
    x,y = PacManPos
-   # on cherche la case adjacente avec la plus courte distante vers la pacgum
-   # et on la choisit comme solution
-   
-   max = -1000
-   # Mode chasse aux pacgums
-   if(TBL_Ghost_IA[x][y] > 3):
-      min = TBL_IA[x][y-1]
-      L = (0,-1)
-      # if (min > TBL_IA[x  ][y-1]):
-      #    min = TBL_IA[x][y-1]
-      #    L = (0,-1)
-      if (min > TBL_IA[x  ][y+1]):
-         min = TBL_IA[x][y+1]
-         L = (0, 1)
-      if (min > TBL_IA[x+1][y  ] ):
-         min = TBL_IA[x+1][y]
-         L = (1,0)
-      if (min > TBL_IA[x-1][y ]):
-         min = TBL_IA[x-1][y]
-         L = (-1,0)
-   # Mode fuite (mode tapette en fait)
-   if(TBL_Ghost_IA[x][y] <= 3):
-      if max < TBL_Ghost_IA[x-1][y] and TBL_Ghost_IA[x-1][y] < 900 :
-         max = TBL_Ghost_IA[x-1][y]
-         L = (-1,0)
-      if max < TBL_Ghost_IA[x+1][y] and TBL_Ghost_IA[x+1][y] < 999 :
-         max = TBL_Ghost_IA[x+1][y]
-         L = (1,0)
-      if max < TBL_Ghost_IA[x][y-1] and TBL_Ghost_IA[x][y-1] < 999 :
-         max = TBL_Ghost_IA[x][y-1]
+   # Mode Normal
+   if(not Super):
+      max = -1000
+      # Mode chasse aux pacgums
+      # on cherche la case adjacente avec la plus courte distante vers la pacgum
+      # et on la choisit comme solution
+      if(TBL_Ghost_IA[x][y] > 3):
+         min = TBL_IA[x][y-1]
          L = (0,-1)
-      if max < TBL_Ghost_IA[x][y+1] and TBL_Ghost_IA[x][y+1] < 999 :
-         max = TBL_Ghost_IA[x][y+1]
+         # if (min > TBL_IA[x  ][y-1]):
+         #    min = TBL_IA[x][y-1]
+         #    L = (0,-1)
+         if (min > TBL_IA[x  ][y+1]):
+            min = TBL_IA[x][y+1]
+            L = (0, 1)
+         if (min > TBL_IA[x+1][y  ] ):
+            min = TBL_IA[x+1][y]
+            L = (1,0)
+         if (min > TBL_IA[x-1][y ]):
+            min = TBL_IA[x-1][y]
+            L = (-1,0)
+      # Mode fuite (mode tapette en fait)
+      if(TBL_Ghost_IA[x][y] <= 3):
+         if max < TBL_Ghost_IA[x-1][y] and TBL_Ghost_IA[x-1][y] < 999 :
+            max = TBL_Ghost_IA[x-1][y]
+            L = (-1,0)
+         if max < TBL_Ghost_IA[x+1][y] and TBL_Ghost_IA[x+1][y] < 999 :
+            max = TBL_Ghost_IA[x+1][y]
+            L = (1,0)
+         if max < TBL_Ghost_IA[x][y-1] and TBL_Ghost_IA[x][y-1] < 999 :
+            max = TBL_Ghost_IA[x][y-1]
+            L = (0,-1)
+         if max < TBL_Ghost_IA[x][y+1] and TBL_Ghost_IA[x][y+1] < 999 :
+            max = TBL_Ghost_IA[x][y+1]
+            L = (0,1)
+   # Mode super = Chasse aux fantômes
+   else:
+      min = 1000
+      if min > TBL_Ghost_IA[x-1][y] and TBL_IA[x-1][y] != 999:
+         min = TBL_Ghost_IA[x-1][y]
+         L = (-1,0)
+      if min > TBL_Ghost_IA[x+1][y] and TBL_IA[x+1][y] != 999:
+         min = TBL_Ghost_IA[x+1][y]
+         L = (1,0)
+      if min > TBL_Ghost_IA[x][y-1] and TBL_IA[x][y-1] != 999:
+         min = TBL_Ghost_IA[x][y-1]
+         L = (0,-1)
+      if min > TBL_Ghost_IA[x][y+1] and TBL_IA[x][y+1] != 999:
+         min = TBL_Ghost_IA[x][y+1]
          L = (0,1)
 
    return L
@@ -427,7 +443,8 @@ def IAPacman():
    for F in Ghosts:
       GHOST[F[0]][F[1]] = 1
    # On remplace toutes les cases du parcours par des "0" si la case correspondante contient une pacgum
-   TBL_Ghost_IA = np.where(GHOST == 1, 0, TBL_Ghost_IA)
+   # On ne prend pas en compte les Ghosts présents dans la base
+   TBL_Ghost_IA = np.where((GHOST == 1) & (TBL == 0), 0, TBL_Ghost_IA)
    
    # Carte des distance fantômes 
    # On initialise à True au début pour commencer la boucle
@@ -493,11 +510,6 @@ def IAPacman():
          info = TBL_IA[x][y]
          if info >= 1000 : info = "+∞"
          SetInfo1(x,y,info)
-         
-   #deplacement Pacman
-   L = PacManPossibleMove(TBL_IA, TBL_Ghost_IA)
-   PacManPos[0] += L[0]
-   PacManPos[1] += L[1]
    
    # Super Mode
    global Super, SuperCount
@@ -511,14 +523,25 @@ def IAPacman():
       Super = False
       SuperCount = 16
          
-   global GameState, GameStateMsg
+   global GameState, GameStateMsg, ScorePlayer
    for F in Ghosts:
       if (F[0] == PacManPos[0] and F[1] == PacManPos[1]):
-         GameState = 1
-         GameStateMsg = "Perdu"
+         if (not Super):
+            GameState = 1
+            GameStateMsg = "Perdu"
+         else:
+            ScorePlayer += 2000
+            F[0] = LARGEUR//2
+            F[1] = HAUTEUR//2
+            
    if np.all(GUM == 0):
       GameState = 2
       GameStateMsg = "Gagné"
+      
+   #deplacement Pacman
+   L = PacManPossibleMove(TBL_IA, TBL_Ghost_IA)
+   PacManPos[0] += L[0]
+   PacManPos[1] += L[1]
 
    
 def IAGhosts():
@@ -533,15 +556,22 @@ def IAGhosts():
       F[3] = (L[choix][0],L[choix][1])
       F[0] += L[choix][0]
       F[1] += L[choix][1]
-      global GameState, GameStateMsg
+      global GameState, GameStateMsg, Super, ScorePlayer
       if (F[0] == PacManPos[0] and F[1] == PacManPos[1]):
-         GameState = 1
-         GameStateMsg = "Perdu"
+         if (not Super):
+            GameState = 1
+            GameStateMsg = "Perdu"
+         else:
+            ScorePlayer += 2000
+            F[0] = LARGEUR//2
+            F[1] = HAUTEUR//2
+         
+
       
       
 def PacManEatingGum():
    global ScorePlayer, Super
-   if( IsGum() == True ):
+   if( IsGum() == True):
       # Si la gomme est mangée, on passe la position dans le tableau GUM à 0 car la gomme n'est plus là
       GUM[PacManPos[0]][PacManPos[1]] = 0
       ScorePlayer += 100
@@ -564,6 +594,7 @@ def PlayOneTurn():
       if iteration % 2 == 0 :   IAPacman()
       else:                     IAGhosts()
       
+      # Affiche en bleu si en mode super, en jaune sinon
       if (Super):
          Affiche(PacmanColor = "blue", message = GameStateMsg)  
       else:
