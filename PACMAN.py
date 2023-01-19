@@ -548,14 +548,6 @@ def IAGhosts():
    global PacManPos
    #deplacement Fantome
    for F in Ghosts:
-      
-      
-      L = GhostsPossibleMove(F[0],F[1],F[3])
-      choix = random.randrange(len(L))
-      # on associe le fantôme à sa direction courante
-      F[3] = (L[choix][0],L[choix][1])
-      F[0] += L[choix][0]
-      F[1] += L[choix][1]
       global GameState, GameStateMsg, Super, ScorePlayer
       if (F[0] == PacManPos[0] and F[1] == PacManPos[1]):
          if (not Super):
@@ -565,6 +557,12 @@ def IAGhosts():
             ScorePlayer += 2000
             F[0] = LARGEUR//2
             F[1] = HAUTEUR//2
+      L = GhostsPossibleMove(F[0],F[1],F[3])
+      choix = random.randrange(len(L))
+      # on associe le fantôme à sa direction courante
+      F[3] = (L[choix][0],L[choix][1])
+      F[0] += L[choix][0]
+      F[1] += L[choix][1]
          
 
       
